@@ -85,7 +85,6 @@ class Reskiv(EnvironmentBase):
             e.move()
             if self.player.touches(e):
                 done = True
-                reward = -1.
                 break
 
         self.draw()
