@@ -13,9 +13,26 @@ class Side:
     ENEMY = 2
 
 
+class ObservationType:
+    PIXEL = "pixel"
+    VECTOR = "vector"
+
+
+class LearningType:
+    SINGLE_AGENT = "single_agent"
+    MULTI_AGENT = "multi_agent"
+
+
 class MatchConfig:
 
+    OBSERVATION_TYPE_PIXEL = "pixel"
+    OBSERVATION_TYPE_VECTOR = "vector"
+    LEARNING_TYPE_SINGLE_AGENT = "single_agent"
+    LEARNING_TYPE_MULTI_AGENT = "multi_agent"
+
     def __init__(self, canvas_size, players_per_side,
+                 observation_type=ObservationType.VECTOR,
+                 learning_type=LearningType.MULTI_AGENT,
                  random_initialization=True,
                  ball_pixel_radius: int=5,
                  ball_max_velocity: float=20.,
@@ -31,6 +48,8 @@ class MatchConfig:
                  ):
 
         self.canvas_size = canvas_size
+        self.observation_type = observation_type
+        self.learning_type = learning_type
         self.players_per_side = players_per_side
         self.random_initialization = random_initialization
         self.ball_pixel_radius = ball_pixel_radius

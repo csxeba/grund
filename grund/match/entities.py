@@ -77,13 +77,11 @@ class Ball(Entity):
 
 
 class Player(Entity):
-    next_id = 0
 
-    def __init__(self, start_position, matchconfig: MatchConfig, side):
+    def __init__(self, start_position, matchconfig: MatchConfig, side, ID):
         super().__init__(start_position, matchconfig)
-        self.ID = self.__class__.next_id
+        self.ID = ID
         self.team = side
         self.radius = matchconfig.players_pixel_radius
         self.max_velocity = matchconfig.players_max_velocity
         self.friction = matchconfig.players_friction[self.ID]
-        self.__class__.next_id += 1
