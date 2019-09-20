@@ -54,6 +54,10 @@ class Match(EnvironmentBase):
         actions = np.random.randint(0, self.action_space.n, size=len(self.players))
         return actions
 
+    def _get_no_actions(self):
+        actions = np.zeros(len(self.players), dtype=int)
+        return actions
+
     def _random_reset(self):
         self.players[0].reset(self._get_random_coordinates())
         for i, player in enumerate(self.players[1:]):
@@ -95,7 +99,7 @@ class Match(EnvironmentBase):
 
     def step(self, actions):
         if self.cfg.learning_type == LearningType.SINGLE_AGENT:
-            action_template = self._get_random_actions()
+            action_template = self._get_no_actions()
             action_template[0] = actions
             actions = action_template
 
