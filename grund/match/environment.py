@@ -55,7 +55,7 @@ class Match(EnvironmentBase):
         return actions
 
     def _get_no_actions(self):
-        actions = np.zeros(len(self.players), dtype=int)
+        actions = np.full(len(self.players), 4, dtype=int)
         return actions
 
     def _random_reset(self):
