@@ -23,6 +23,11 @@ class LearningType:
     MULTI_AGENT = "multi_agent"
 
 
+class ActionSpaceType:
+    DISCREETE = "discreete"
+    CONTINUOUS = "continuous"
+
+
 class MatchConfig:
 
     OBSERVATION_TYPE_PIXEL = "pixel"
