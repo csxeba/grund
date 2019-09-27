@@ -1,16 +1,13 @@
 import numpy as np
 
-from .config import MatchConfig, Side, ObservationType, LearningType
+from .config import MatchConfig, Side, ObservationType
 from .entities import Ball, Player
-from .operation import handle_player_collision, handle_kick
+from .operation import handle_player_collision, handle_kick, clarify_action
 from .observation import MatchObservationMaker
-from ..util.abstract import EnvironmentBase
-from ..util.spaces import ObservationSpace, DiscreetActionSpace
-from ..util.screen import CV2Screen
-from ..util.movement import get_movement_vectors
+from ..util import abstract, spaces, screen, movement
 
 
-class Match(EnvironmentBase):
+class Match(abstract.EnvironmentBase):
 
     def __init__(self, config: MatchConfig):
         self.cfg = config
@@ -22,8 +19,8 @@ class Match(EnvironmentBase):
         self.players = None
         self.observation_space = None
         self.action_space = None
-        self.screen = CV2Screen()
-        self.movements = get_movement_vectors(5)
+        self.screen = screen.CV2Screen()
+        self.movements = movement.get_movement_vectors(5)
         self._next_player_id = -1
         self._create_all_entities()
 
@@ -44,19 +41,11 @@ class Match(EnvironmentBase):
                                 matchconfig=self.cfg,
                                 side=Side.ENEMY,
                                 ID=self._player_id) for i in range(1, self.cfg.players_per_side + 1)]
-        self.observation_space = ObservationSpace(self.observation_factory.observation_shape)
-        self.action_space = DiscreetActionSpace(actions=np.arange(len(self.movements)))
+        self.observation_space = spaces.ObservationSpace(self.observation_factory.observation_shape)
+        self.action_space = spaces.DiscreetActionSpace(actions=np.arange(len(self.movements)))
 
     def _get_random_coordinates(self):
         return np.random.uniform(0, self.canvas_size, size=2)
-
-    def _get_random_actions(self):
-        actions = np.random.randint(0, self.action_space.n, size=len(self.players))
-        return actions
-
-    def _get_no_actions(self):
-        actions = np.full(len(self.players), 4, dtype=int)
-        return actions
 
     def _random_reset(self):
         self.players[0].reset(self._get_random_coordinates())
@@ -98,32 +87,34 @@ class Match(EnvironmentBase):
         return self.ball.goal
 
     def step(self, actions):
-        if self.cfg.learning_type == LearningType.SINGLE_AGENT:
-            action_template = self._get_no_actions()
-            action_template[0] = actions
-            actions = action_template
+        for skip in range(self.cfg.frameskip):
 
-        b_movement = []
-        positions = {"ball": self.ball.position}
-        for ctrl, player in zip(actions, self.players):
-            positions[player.ID] = player.position
-            vector = self.movements[ctrl]
-            player.step(vector)
-            if player.touches(self.ball):
-                kick_vector = handle_kick(player, self.ball)
-                b_movement.append(kick_vector)
-                player.position = positions[player.ID]
+            all_action_vectors = clarify_action(
+                actions, self.movements, self.cfg.action_space_type, self.cfg.learning_type, len(self.players)
+            )
 
-        for i, player1 in enumerate(self.players[:-1], start=1):
-            for player2 in self.players[i:]:
-                if player1.touches(player2):
-                    handle_player_collision(player1, player2)
-                    player1.position = positions[player1.ID]
-                    player2.position = positions[player2.ID]
+            b_movement = []
+            positions = {"ball": self.ball.position}
+            for ctrl, player in zip(all_action_vectors, self.players):
+                positions[player.ID] = player.position
+                player.step(ctrl)
+                if player.touches(self.ball):
+                    kick_vector = handle_kick(player, self.ball)
+                    b_movement.append(kick_vector)
+                    player.position = positions[player.ID]
 
-        self.ball.step(np.sum(b_movement, axis=0))
-        if self.ball.goal and not self.finished:
-            self.finished = True
+            for i, player1 in enumerate(self.players[:-1], start=1):
+                for player2 in self.players[i:]:
+                    if player1.touches(player2):
+                        handle_player_collision(player1, player2)
+                        player1.position = positions[player1.ID]
+                        player2.position = positions[player2.ID]
+
+            self.ball.step(np.sum(b_movement, axis=0))
+            if self.ball.goal and not self.finished:
+                self.finished = True
+                break
+
         return self.get_state(), self.get_reward_score(), self.finished, {}
 
     def render(self):

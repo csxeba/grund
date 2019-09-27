@@ -38,7 +38,9 @@ class MatchConfig:
     def __init__(self, canvas_size, players_per_side,
                  observation_type=ObservationType.VECTOR,
                  learning_type=LearningType.MULTI_AGENT,
+                 action_space_type=ActionSpaceType.DISCREETE,
                  random_initialization=True,
+                 frameskip=None,
                  ball_pixel_radius: int=5,
                  ball_max_velocity: float=20.,
                  ball_friction: float=0.9,
@@ -55,8 +57,10 @@ class MatchConfig:
         self.canvas_size = canvas_size
         self.observation_type = observation_type
         self.learning_type = learning_type
+        self.action_space_type = action_space_type
         self.players_per_side = players_per_side
         self.random_initialization = random_initialization
+        self.frameskip = frameskip
         self.ball_pixel_radius = ball_pixel_radius
         self.players_pixel_radius = players_pixel_radius
         self.ball_max_velocity = ball_max_velocity
@@ -86,3 +90,5 @@ class MatchConfig:
             self.players_friction = [self.players_friction for _ in range(self.players_per_side*2)]
         if self.communication_allowed:
             print("Communication is not yet implemented :(")
+        if self.frameskip is None or self.frameskip < 1:
+            self.frameskip = 1
