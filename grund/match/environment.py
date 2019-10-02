@@ -41,7 +41,7 @@ class Match(abstract.EnvironmentBase):
                                 matchconfig=self.cfg,
                                 side=Side.ENEMY,
                                 ID=self._player_id) for i in range(1, self.cfg.players_per_side + 1)]
-        self.observation_space = spaces.ObservationSpace(self.observation_factory.observation_shape)
+        self.observation_space = spaces.ObservationSpace(self.observation_factory.observation_shape + (3,))
         self.action_space = spaces.DiscreetActionSpace(actions=np.arange(len(self.movements)))
 
     def _get_random_coordinates(self):
@@ -78,13 +78,15 @@ class Match(abstract.EnvironmentBase):
             observation = self.observation_factory.get_numeric_observation(self.ball, team1, team2)
         else:
             observation = self.observation_factory.get_pixel_observation(self.ball, team1, team2)
+            if self.cfg.observation_type == ObservationType.PIXEL:
+                observation = observation[0]
         return observation
 
     def get_reward_ball_offset(self):
         return ((self.canvas_size[0] - self.ball.position[0]) / self.canvas_size[0]) - 0.5
 
     def get_reward_score(self):
-        return self.ball.goal
+        return self.ball.goal * 100
 
     def step(self, actions):
         for skip in range(self.cfg.frameskip):
