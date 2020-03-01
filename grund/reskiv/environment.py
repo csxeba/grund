@@ -1,9 +1,10 @@
 from typing import List
 
+import gym
 import numpy as np
+import cv2
 
 from .entities import EnemyBall, PlayerBall, Square
-from ..util.abstract import EnvironmentBase
 
 
 class ReskivConfig:
@@ -32,7 +33,7 @@ class ReskivConfig:
         self.player_speed = player_speed
 
 
-class Reskiv(EnvironmentBase):
+class Reskiv(gym.Env):
 
     def __init__(self, config: ReskivConfig):
         super().__init__()
@@ -43,6 +44,7 @@ class Reskiv(EnvironmentBase):
         self.enemies = None  # type: List[EnemyBall]
         self.score = False
         self.mean_dist = np.array(self.cfg.canvas_shape).min() / 2.
+        self.action_space = gym.spaces.Discrete()
 
     def spawn_enemy(self):
         enemy = EnemyBall(np.array(self.cfg.canvas_shape[:2]).astype(float),
@@ -90,14 +92,6 @@ class Reskiv(EnvironmentBase):
         self.draw()
         return self.canvas, reward, done, info
 
-    @property
-    def neurons_required(self):
-        return self.state_shape, self.action_space_shape
-
-    @property
-    def state_shape(self):
-        return self.canvas.shape
-
-    @property
-    def action_space_shape(self):
-        return 2,
+    def render(self, mode='human'):
+        cv2.imshow("Reskiv Canvas", self.canvas)
+        return cv2.waitKey(1000 // 25)
