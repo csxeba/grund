@@ -86,8 +86,9 @@ class Square(_EntityBase):
 class PlayerBall(_EntityBase):
 
     def __init__(self, canvas_shape, color, size, speed):
-        super().__init__(canvas_shape, color, size, canvas_shape // 2)
+        super().__init__(canvas_shape, color, size)
         self.speed = speed
+        self.teleport()
 
     def move(self, dvec):
         super().move(dvec=dvec*self.speed)

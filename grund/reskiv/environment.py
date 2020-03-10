@@ -5,12 +5,13 @@ import numpy as np
 import cv2
 
 from .entities import EnemyBall, PlayerBall, Square
+from ..util import movement
 
 
 class ReskivConfig:
 
     def __init__(self,
-                 canvas_shape=(128, 128, 3),
+                 canvas_shape=(128, 128),
                  initial_number_of_enemies=1,
                  player_radius=4,
                  enemy_radius=2,
@@ -21,7 +22,7 @@ class ReskivConfig:
                  enemy_speed=5,
                  player_speed=7):
 
-        self.canvas_shape = canvas_shape
+        self.canvas_shape = list(canvas_shape)
         self.initial_number_of_enemies = initial_number_of_enemies
         self.player_radius = player_radius
         self.enemy_radius = enemy_radius
@@ -38,13 +39,16 @@ class Reskiv(gym.Env):
     def __init__(self, config: ReskivConfig):
         super().__init__()
         self.cfg = config
-        self.canvas = np.zeros(config.canvas_shape, dtype="uint8")  # type: np.ndarray
+        self.canvas_shape = config.canvas_shape + [3]
+        self.canvas = np.zeros(self.canvas_shape, dtype="uint8")  # type: np.ndarray
         self.player = None  # type: PlayerBall
         self.square = None  # type: Square
         self.enemies = None  # type: List[EnemyBall]
         self.score = False
-        self.mean_dist = np.array(self.cfg.canvas_shape).min() / 2.
-        self.action_space = gym.spaces.Discrete()
+        self.mean_dist = np.array(config.canvas_shape).min() / 2.
+        self.action_space = gym.spaces.Discrete(5)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.canvas_shape, dtype="uint8")
+        self.movement_vectors = movement.get_movement_vectors(num_directions=5)
 
     def spawn_enemy(self):
         enemy = EnemyBall(np.array(self.cfg.canvas_shape[:2]).astype(float),
@@ -71,15 +75,16 @@ class Reskiv(gym.Env):
         self.draw()
         return self.canvas
 
-    def step(self, action):
+    def step(self, action: int):
         done = False
-        reward = 0.
         info = {}
-        self.player.move(action)
+        reward = -0.1
+        movement_vector = self.movement_vectors[action]
+        self.player.move(movement_vector)
 
         if self.player.touches(self.square):
             self.score += 1
-            reward = 1.
+            reward = 10. * self.score
             self.square.teleport()
             self.spawn_enemy()
 
