@@ -39,20 +39,23 @@ class Reskiv(gym.Env):
     def __init__(self, config: ReskivConfig):
         super().__init__()
         self.cfg = config
+
         self.canvas_shape = config.canvas_shape + [3]
         self.canvas = np.zeros(self.canvas_shape, dtype="uint8")  # type: np.ndarray
-        self.player = None  # type: PlayerBall
-        self.square = None  # type: Square
-        self.enemies = None  # type: List[EnemyBall]
-        self.score = False
+
+        self.player = PlayerBall(config.canvas_shape, config.player_color, config.player_radius, config.player_speed)
+        self.square = Square(config.canvas_shape, config.target_color, config.target_size)
+        self.enemies = []
+
+        self.score = 0
         self.mean_dist = np.array(config.canvas_shape).min() / 2.
+
         self.action_space = gym.spaces.Discrete(5)
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.canvas_shape, dtype="uint8")
         self.movement_vectors = movement.get_movement_vectors(num_directions=5)
 
     def spawn_enemy(self):
-        enemy = EnemyBall(np.array(self.cfg.canvas_shape[:2]).astype(float),
-                          self.cfg.enemy_color, self.cfg.enemy_radius, self.cfg.enemy_speed)
+        enemy = EnemyBall(self.cfg.canvas_shape, self.cfg.enemy_color, self.cfg.enemy_radius, self.cfg.enemy_speed)
         while enemy.distance(self.player) < self.mean_dist:
             enemy.teleport()
         self.enemies.append(enemy)
@@ -65,9 +68,8 @@ class Reskiv(gym.Env):
             self.canvas = enemy.draw(self.canvas)
 
     def reset(self):
-        cshape = np.array(self.cfg.canvas_shape[:2])
-        self.player = PlayerBall(cshape, self.cfg.player_color, self.cfg.player_radius, self.cfg.player_speed)
-        self.square = Square(cshape, self.cfg.target_color, self.cfg.target_size)
+        self.player.teleport()
+        self.square.teleport()
         self.enemies = []
         for _ in range(self.cfg.initial_number_of_enemies):
             self.spawn_enemy()

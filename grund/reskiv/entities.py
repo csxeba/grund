@@ -5,7 +5,7 @@ import cv2
 class _EntityBase:
 
     def __init__(self, canvas_shape, color, size, coords=None):
-        self.canvas_shape = canvas_shape
+        self.canvas_shape = np.array(canvas_shape[:2]).astype(float)
         self._coords = np.array([-50., -50.])
         self.color = color
         self.size = size
@@ -72,8 +72,8 @@ class EnemyBall(_EntityBase):
 
 class Square(_EntityBase):
 
-    def __init__(self, game, color, size):
-        super().__init__(game, color, size*2)
+    def __init__(self, canvas_shape, color, size):
+        super().__init__(canvas_shape, color, size*2)
         self.teleport()
 
     def draw(self, screen):
