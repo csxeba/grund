@@ -19,7 +19,7 @@ class ReskivConfig:
                  enemy_radius: int = 2,
                  target_size: int = 3,
                  player_color: Tuple[int, int, int] = (127, 127, 127),
-                 enemy_color: Tuple[int, int, int] = (0, 0, 255),
+                 enemy_color: Tuple[int, int, int] = (255, 0, 0),
                  target_color: Tuple[int, int, int] = (63, 63, 63),
                  enemy_speed: int = 5,
                  player_speed: int = 7):
