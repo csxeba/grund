@@ -1,9 +1,10 @@
-from typing import List
+from typing import Tuple
 
-import gym
 import numpy as np
 import cv2
+import gym
 
+from ..abstract import GrundEnv
 from .entities import EnemyBall, PlayerBall, Square
 from ..util import movement
 
@@ -12,17 +13,19 @@ class ReskivConfig:
 
     def __init__(self,
                  canvas_shape=(128, 128),
-                 initial_number_of_enemies=1,
-                 player_radius=4,
-                 enemy_radius=2,
-                 target_size=3,
-                 player_color=(127, 127, 127),
-                 enemy_color=(0, 0, 255),
-                 target_color=(63, 63, 63),
-                 enemy_speed=5,
-                 player_speed=7):
+                 frames_per_second: int = 25,
+                 initial_number_of_enemies: int = 1,
+                 player_radius: int = 4,
+                 enemy_radius: int = 2,
+                 target_size: int = 3,
+                 player_color: Tuple[int, int, int] = (127, 127, 127),
+                 enemy_color: Tuple[int, int, int] = (0, 0, 255),
+                 target_color: Tuple[int, int, int] = (63, 63, 63),
+                 enemy_speed: int = 5,
+                 player_speed: int = 7):
 
         self.canvas_shape = list(canvas_shape)
+        self.frames_per_second = frames_per_second
         self.initial_number_of_enemies = initial_number_of_enemies
         self.player_radius = player_radius
         self.enemy_radius = enemy_radius
@@ -34,25 +37,26 @@ class ReskivConfig:
         self.player_speed = player_speed
 
 
-class Reskiv(gym.Env):
+class REskiv(GrundEnv):
 
     def __init__(self, config: ReskivConfig):
         super().__init__()
         self.cfg = config
 
         self.canvas_shape = config.canvas_shape + [3]
-        self.canvas = np.zeros(self.canvas_shape, dtype="uint8")  # type: np.ndarray
+        self._canvas = np.zeros(self.canvas_shape, dtype="uint8")  # type: np.ndarray
 
         self.player = PlayerBall(config.canvas_shape, config.player_color, config.player_radius, config.player_speed)
         self.square = Square(config.canvas_shape, config.target_color, config.target_size)
         self.enemies = []
 
-        self.score = 0
-        self.mean_dist = np.array(config.canvas_shape).min() / 2.
+        self.mean_dist = np.min(np.array(config.canvas_shape)) / 2.
 
         self.action_space = gym.spaces.Discrete(5)
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.canvas_shape, dtype="uint8")
         self.movement_vectors = movement.get_movement_vectors(num_directions=5)
+
+        self.renderer = None
 
     def spawn_enemy(self):
         enemy = EnemyBall(self.cfg.canvas_shape, self.cfg.enemy_color, self.cfg.enemy_radius, self.cfg.enemy_speed)
@@ -61,11 +65,11 @@ class Reskiv(gym.Env):
         self.enemies.append(enemy)
 
     def draw(self):
-        self.canvas *= 0
-        self.canvas = self.player.draw(self.canvas)
-        self.canvas = self.square.draw(self.canvas)
+        self._canvas *= 0
+        self._canvas = self.player.draw(self._canvas)
+        self._canvas = self.square.draw(self._canvas)
         for enemy in self.enemies:
-            self.canvas = enemy.draw(self.canvas)
+            self._canvas = enemy.draw(self._canvas)
 
     def reset(self):
         self.player.teleport()
@@ -73,20 +77,18 @@ class Reskiv(gym.Env):
         self.enemies = []
         for _ in range(self.cfg.initial_number_of_enemies):
             self.spawn_enemy()
-        self.score = 0
         self.draw()
-        return self.canvas
+        return self._canvas
 
     def step(self, action: int):
         done = False
         info = {}
-        reward = -0.1
+        reward = 0.
         movement_vector = self.movement_vectors[action]
         self.player.move(movement_vector)
 
         if self.player.touches(self.square):
-            self.score += 1
-            reward = 10. * self.score
+            reward = 5.
             self.square.teleport()
             self.spawn_enemy()
 
@@ -97,8 +99,13 @@ class Reskiv(gym.Env):
                 break
 
         self.draw()
-        return self.canvas, reward, done, info
+        return self._canvas, reward, done, info
 
-    def render(self, mode='human'):
-        cv2.imshow("Reskiv Canvas", self.canvas)
-        return cv2.waitKey(1000 // 25)
+    def render(self, mode: str = "human"):
+        if mode == "human":
+            cv2.imshow("REskiv", self._canvas)
+            cv2.waitKey(1000 // self.cfg.frames_per_second)
+        elif mode == "rgb_array":
+            return self._canvas
+        else:
+            raise NotImplementedError
