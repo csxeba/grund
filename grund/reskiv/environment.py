@@ -12,12 +12,12 @@ from ..util import movement
 class ReskivConfig:
 
     def __init__(self,
-                 canvas_shape=(128, 128),
+                 canvas_shape=(400, 500),
                  frames_per_second: int = 25,
                  initial_number_of_enemies: int = 1,
-                 player_radius: int = 4,
-                 enemy_radius: int = 2,
-                 target_size: int = 3,
+                 player_radius: int = 10,
+                 enemy_radius: int = 5,
+                 target_size: int = 10,
                  player_color: Tuple[int, int, int] = (127, 127, 127),
                  enemy_color: Tuple[int, int, int] = (0, 0, 255),
                  target_color: Tuple[int, int, int] = (63, 63, 63),
