@@ -10,7 +10,5 @@ setup(
     author_email='csxeba@gmail.com',
     description='My Reinforcement Learning playground',
     long_description=open("README.md").read(),
-    extras_require={
-        "full": ["keras>=2.0"]
-    }
+    install_requires=open("requirements.txt").read().split("\n")
 )
