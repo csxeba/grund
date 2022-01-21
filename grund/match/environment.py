@@ -1,15 +1,17 @@
 import numpy as np
 
+from grund import abstract
 from .config import MatchConfig, Side, ObservationType
 from .entities import Ball, Player
 from .operation import handle_player_collision, handle_kick, clarify_action
 from .observation import MatchObservationMaker
-from ..util import abstract, spaces, screen, movement
+from ..util import spaces, screen, movement
 
 
-class Match(abstract.EnvironmentBase):
+class Match(abstract.GrundEnv):
 
     def __init__(self, config: MatchConfig):
+        super().__init__()
         self.cfg = config
         self.shuffle = config.random_initialization
         self.canvas_size = np.array(config.canvas_size, dtype=int)
@@ -119,7 +121,7 @@ class Match(abstract.EnvironmentBase):
 
         return self.get_state(), self.get_reward_score(), self.finished, {}
 
-    def render(self):
+    def render(self, mode="human"):
         team1, team2 = self.teams
         obs = self.observation_factory.get_pixel_observation(self.ball, team1, team2)
         self.screen.blit(obs[0])

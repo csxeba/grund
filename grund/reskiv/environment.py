@@ -12,7 +12,7 @@ from ..util import movement
 class ReskivConfig:
 
     def __init__(self,
-                 canvas_shape=(400, 500),
+                 canvas_shape: Tuple[int, int] = (400, 500),
                  frames_per_second: int = 25,
                  initial_number_of_enemies: int = 1,
                  player_radius: int = 10,
@@ -37,7 +37,7 @@ class ReskivConfig:
         self.player_speed = player_speed
 
 
-class REskiv(GrundEnv):
+class Reskiv(GrundEnv):
 
     def __init__(self, config: ReskivConfig):
         super().__init__()

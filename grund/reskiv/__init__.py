@@ -1,1 +1,1 @@
-from .environment import ReskivConfig, REskiv
+from .environment import ReskivConfig, Reskiv
