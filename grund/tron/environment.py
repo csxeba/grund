@@ -1,4 +1,5 @@
 import dataclasses
+import random
 from typing import Tuple, NamedTuple, Set
 
 import numpy as np
@@ -7,6 +8,7 @@ from grund import abstract
 from grund.util import spaces
 from .types import Coordinate, TRONAction, TRONObservation, TRONReward, StepResult
 from .types import COLORS, SEMANTIC_CLASSES, DIRECTIONS
+from . import util
 
 
 @dataclasses.dataclass
@@ -34,7 +36,7 @@ class TRONPlayer:
     def create(cls, canvas_shape: Tuple[int, int]):
 
         observation_aspect = np.full(
-            shape=[canvas_shape[0], canvas_shape[1], SEMANTIC_CLASSES.NO_SEMANTIC_CLASSES],
+            shape=[canvas_shape[0], canvas_shape[1]],
             fill_value=SEMANTIC_CLASSES.BACKGROUND,
             dtype="uint8",
         )
@@ -91,13 +93,13 @@ class TRONEnvironment(abstract.GrundEnv):
         self.player_2 = TRONPlayer.create(canvas_shape=config.shape_xy)
         self._render_aspect = np.empty([config.shape_xy[0], config.shape_xy[1], 3], dtype="uint8")
         self.action_space = spaces.DiscreetActionSpace(actions=len(DIRECTIONS.VALID_DIRECTIONS))
-        self.observation_space = spaces.ObservationSpace(
-            shape=list(config.shape_xy) + [SEMANTIC_CLASSES.NO_SEMANTIC_CLASSES])
+        self.observation_space = spaces.ObservationSpace(shape=config.shape_xy)
+        self.num_semantic_classes = SEMANTIC_CLASSES.NO_SEMANTIC_CLASSES
         self.done = None
 
     def _is_player_dead(self, player: TRONPlayer, enemy: TRONPlayer) -> bool:
         coords_np = player.position_xy.numpy()
-        dead = np.any(np.logical_or(coords_np < 0, coords_np >= self.size_xy))
+        dead = np.any(np.logical_or(coords_np < 0, coords_np >= (self.size_xy - 1)))
         dead = dead or player.position_xy in player.path
         dead = dead or player.position_xy in enemy.path
         return dead
@@ -116,10 +118,10 @@ class TRONEnvironment(abstract.GrundEnv):
         self._render_aspect[self.player_2.position_xy.T] = self.cfg.player_2_color
 
     def reset(self) -> TRONObservation:
-        self.player_1.reset(position=Coordinate(self.cfg.shape_xy[1] // 3, self.cfg.shape_xy[0] // 2),
-                            direction=DIRECTIONS.UP)
-        self.player_2.reset(position=Coordinate((self.cfg.shape_xy[1] * 2) // 3, self.cfg.shape_xy[0] // 2),
-                            direction=DIRECTIONS.UP)
+        c1, c2 = util.generate_random_starting_positions(self.cfg.shape_xy, boundary=3)
+        d1, d2 = [random.choice(DIRECTIONS.VALID_DIRECTIONS[:4]) for _ in range(2)]
+        self.player_1.reset(position=c1, direction=d1)
+        self.player_2.reset(position=c2, direction=d2)
         self._reset_render_aspect()
         self.done = False
         return TRONObservation(self.player_1.observation_aspect, self.player_2.observation_aspect, self._render_aspect)
@@ -138,15 +140,18 @@ class TRONEnvironment(abstract.GrundEnv):
         dead_players = [self._is_player_dead(self.player_1, self.player_2),
                         self._is_player_dead(self.player_2, self.player_1)]
 
-        if all(dead_players) or not any(dead_players):
-            self.player_1.reward_aspect = 0.
-            self.player_2.reward_aspect = 0.
+        if all(dead_players):
+            self.player_1.reward_aspect = -1.
+            self.player_2.reward_aspect = -1.
         elif dead_players[0]:
             self.player_1.reward_aspect = -1.
             self.player_2.reward_aspect = 1.
         elif dead_players[1]:
             self.player_1.reward_aspect = 1.
             self.player_2.reward_aspect = -1.
+        elif not any(dead_players):
+            self.player_1.reward_aspect = 0.
+            self.player_2.reward_aspect = 0.
         else:
             assert False, "All cases should've been handled"
 

@@ -1,4 +1,5 @@
-from typing import NamedTuple
+import random
+from typing import NamedTuple, List
 
 import numpy as np
 
@@ -41,6 +42,16 @@ class Coordinate(NamedTuple):
     def T(self):
         return Coordinate(self.y, self.x)
 
+    @classmethod
+    def random(cls,
+               range_x0: int,
+               range_x1: int,
+               range_y0: int,
+               range_y1: int
+               ) -> "Coordinate":
+
+        return cls(random.randint(range_x0, range_x1), random.randint(range_y0, range_y1))
+
     def __add__(self, other: "Coordinate"):
         assert isinstance(other, self.__class__)
         x, y = self.x + other.x, self.y + other.y
@@ -62,8 +73,8 @@ class DIRECTIONS:
     VALID_DIRECTIONS = [UP, DOWN, LEFT, RIGHT, NOOP]
 
     UP_SELECTOR = 0
-    DOWN_SELECTOR = 1
-    LEFT_SELECTOR = 2
+    LEFT_SELECTOR = 1
+    DOWN_SELECTOR = 2
     RIGHT_SELECTOR = 3
     NOOP_SELECTOR = 4
 
@@ -73,7 +84,12 @@ class DIRECTIONS:
                  DOWN: UP,
                  LEFT: RIGHT,
                  RIGHT: LEFT,
-                 NOOP: NOOP}
+                 NOOP: NOOP,
+                 UP_SELECTOR: DOWN_SELECTOR,
+                 DOWN_SELECTOR: UP_SELECTOR,
+                 LEFT_SELECTOR: RIGHT_SELECTOR,
+                 RIGHT_SELECTOR: LEFT_SELECTOR,
+                 NOOP_SELECTOR: NOOP_SELECTOR}
 
 
 class TRONAction(NamedTuple):
