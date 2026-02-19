@@ -2,7 +2,7 @@ import numpy as np
 
 
 def is_neighbour(entity, other, diag=True):
-    thresh = np.sqrt(2.) if diag else 1.
+    thresh = np.sqrt(2.0) if diag else 1.0
     return np.linalg.norm(entity.position - other.position) <= thresh
 
 
@@ -19,11 +19,14 @@ def boxes_overlap(box_x0y0x1y1: np.ndarray, other_boxes: np.ndarray) -> np.ndarr
     assert other_boxes.ndim == 2
     assert box_x0y0x1y1.shape[0] == other_boxes.shape[1] == 4
 
-    overlaps = np.logical_or.reduce([
-        box_x0y0x1y1[2] >= other_boxes[:, 0],  # rx < lx
-        box_x0y0x1y1[0] <= other_boxes[:, 2],  # lx > rx
-        box_x0y0x1y1[1] >= other_boxes[:, 3],  # ty < by
-        box_x0y0x1y1[3] <= other_boxes[:, 1],  # by > ty
-    ], axis=0)
+    overlaps = np.logical_or.reduce(
+        [
+            box_x0y0x1y1[2] >= other_boxes[:, 0],  # rx < lx
+            box_x0y0x1y1[0] <= other_boxes[:, 2],  # lx > rx
+            box_x0y0x1y1[1] >= other_boxes[:, 3],  # ty < by
+            box_x0y0x1y1[3] <= other_boxes[:, 1],  # by > ty
+        ],
+        axis=0,
+    )
 
     return overlaps

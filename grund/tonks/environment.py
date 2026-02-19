@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 
@@ -26,7 +26,6 @@ class Particle:
 
 
 class TonksEnvironment(GrundEnv):
-
     def __init__(self, config: TonksConfig) -> None:
         super().__init__()
         self.config = config
@@ -40,19 +39,28 @@ class TonksEnvironment(GrundEnv):
     def _add_tonk(self, position_x0y0: Optional[np.ndarray] = None) -> None:
         TRIES = 100
         tonks_wh = np.array([self.config.tonks_width, self.config.tonks_height])
-        all_tonks_x0y0x1y1 = np.concatenate([
-            self.tonks_static_info[:, :2],
-            self.tonks_static_info[:, :2] + self.tonks_static_info[:, 2:4],
-        ], axis=1)
+        all_tonks_x0y0x1y1 = np.concatenate(
+            [
+                self.tonks_static_info[:, :2],
+                self.tonks_static_info[:, :2] + self.tonks_static_info[:, 2:4],
+            ],
+            axis=1,
+        )
         if position_x0y0 is not None:
-            tonk_x0y0x1y1 = np.concatenate([position_x0y0, position_x0y0 + tonks_wh], axis=0)
+            tonk_x0y0x1y1 = np.concatenate(
+                [position_x0y0, position_x0y0 + tonks_wh], axis=0
+            )
             if any(operation.boxes_overlap(tonk_x0y0x1y1, all_tonks_x0y0x1y1)):
-                raise RuntimeError(f"Cannot add tonk to {position_x0y0}. Reason is collision position")
+                raise RuntimeError(
+                    f"Cannot add tonk to {position_x0y0}. Reason is collision position"
+                )
         max_w = self.config.map_width - self.config.tonks_width - 1
         max_h = self.config.map_height - self.config.tonks_height - 1
         for trial_no in range(TRIES):
             position_x0y0 = np.random.randint([0, 0], [max_w, max_h], size=1)
-            tonk_x0y0x1y1 = np.concatenate([position_x0y0, position_x0y0 + tonks_wh], axis=0)
+            tonk_x0y0x1y1 = np.concatenate(
+                [position_x0y0, position_x0y0 + tonks_wh], axis=0
+            )
             if any(operation.boxes_overlap(tonk_x0y0x1y1, all_tonks_x0y0x1y1)):
                 continue
             else:

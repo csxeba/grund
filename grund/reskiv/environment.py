@@ -1,29 +1,29 @@
 from typing import Tuple
 
-import numpy as np
 import cv2
 import gym
+import numpy as np
 
 from ..abstract import GrundEnv
-from .entities import EnemyBall, PlayerBall, Square
 from ..util import movement
+from .entities import EnemyBall, PlayerBall, Square
 
 
 class ReskivConfig:
-
-    def __init__(self,
-                 canvas_shape: Tuple[int, int] = (400, 500),
-                 frames_per_second: int = 25,
-                 initial_number_of_enemies: int = 1,
-                 player_radius: int = 10,
-                 enemy_radius: int = 5,
-                 target_size: int = 10,
-                 player_color: Tuple[int, int, int] = (127, 127, 127),
-                 enemy_color: Tuple[int, int, int] = (255, 0, 0),
-                 target_color: Tuple[int, int, int] = (63, 63, 63),
-                 enemy_speed: int = 5,
-                 player_speed: int = 7):
-
+    def __init__(
+        self,
+        canvas_shape: Tuple[int, int] = (400, 500),
+        frames_per_second: int = 25,
+        initial_number_of_enemies: int = 1,
+        player_radius: int = 10,
+        enemy_radius: int = 5,
+        target_size: int = 10,
+        player_color: Tuple[int, int, int] = (127, 127, 127),
+        enemy_color: Tuple[int, int, int] = (255, 0, 0),
+        target_color: Tuple[int, int, int] = (63, 63, 63),
+        enemy_speed: int = 5,
+        player_speed: int = 7,
+    ):
         self.canvas_shape = list(canvas_shape)
         self.frames_per_second = frames_per_second
         self.initial_number_of_enemies = initial_number_of_enemies
@@ -38,7 +38,6 @@ class ReskivConfig:
 
 
 class Reskiv(GrundEnv):
-
     def __init__(self, config: ReskivConfig):
         super().__init__()
         self.cfg = config
@@ -46,20 +45,34 @@ class Reskiv(GrundEnv):
         self.canvas_shape = config.canvas_shape + [3]
         self._canvas = np.zeros(self.canvas_shape, dtype="uint8")  # type: np.ndarray
 
-        self.player = PlayerBall(config.canvas_shape, config.player_color, config.player_radius, config.player_speed)
-        self.square = Square(config.canvas_shape, config.target_color, config.target_size)
+        self.player = PlayerBall(
+            config.canvas_shape,
+            config.player_color,
+            config.player_radius,
+            config.player_speed,
+        )
+        self.square = Square(
+            config.canvas_shape, config.target_color, config.target_size
+        )
         self.enemies = []
 
-        self.mean_dist = np.min(np.array(config.canvas_shape)) / 2.
+        self.mean_dist = np.min(np.array(config.canvas_shape)) / 2.0
 
         self.action_space = gym.spaces.Discrete(5)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.canvas_shape, dtype="uint8")
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=self.canvas_shape, dtype="uint8"
+        )
         self.movement_vectors = movement.get_movement_vectors(num_directions=5)
 
         self.renderer = None
 
     def spawn_enemy(self):
-        enemy = EnemyBall(self.cfg.canvas_shape, self.cfg.enemy_color, self.cfg.enemy_radius, self.cfg.enemy_speed)
+        enemy = EnemyBall(
+            self.cfg.canvas_shape,
+            self.cfg.enemy_color,
+            self.cfg.enemy_radius,
+            self.cfg.enemy_speed,
+        )
         while enemy.distance(self.player) < self.mean_dist:
             enemy.teleport()
         self.enemies.append(enemy)
@@ -83,12 +96,12 @@ class Reskiv(GrundEnv):
     def step(self, action: int):
         done = False
         info = {}
-        reward = 0.
+        reward = 0.0
         movement_vector = self.movement_vectors[action]
         self.player.move(movement_vector)
 
         if self.player.touches(self.square):
-            reward = 5.
+            reward = 5.0
             self.square.teleport()
             self.spawn_enemy()
 

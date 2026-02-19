@@ -1,11 +1,11 @@
+import gymnasium as gym
 import numpy as np
-import  gymnasium as gym
 
 
 class GrundEnv(gym.Env):
-
     canvas_error = NotImplementedError(
-        "Please implement the .canvas property or set the _canvas attribute with an array!")
+        "Please implement the .canvas property or set the _canvas attribute with an array!"
+    )
 
     def __init__(self):
         self._canvas = None

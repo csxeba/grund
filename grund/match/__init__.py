@@ -1,2 +1,2 @@
-from .environment import Match
 from .config import MatchConfig
+from .environment import Match

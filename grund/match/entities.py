@@ -2,13 +2,11 @@ import numpy as np
 
 from .config import MatchConfig
 
-
 ZERO = np.zeros(2)
 ZERO.flags["WRITEABLE"] = False
 
 
 class Entity:
-
     def __init__(self, start_position, matchconfig: MatchConfig):
         self.fsize = matchconfig.canvas_size
         self.start_position = start_position.copy()
@@ -40,9 +38,11 @@ class Entity:
         if vnorm > self.max_velocity:
             self.velocity = self.velocity / vnorm * self.max_velocity
         self._position += self.velocity
-        hangover = np.logical_or(self._position < self.radius, self._position >= self.fsize - self.radius)
+        hangover = np.logical_or(
+            self._position < self.radius, self._position >= self.fsize - self.radius
+        )
         self.velocity[hangover] *= -0.25
-        self._position = np.clip(self._position, self.radius, self.fsize-self.radius)
+        self._position = np.clip(self._position, self.radius, self.fsize - self.radius)
 
     def touches(self, other):
         d = np.linalg.norm(self._position - other._position)
@@ -54,7 +54,6 @@ class Entity:
 
 
 class Ball(Entity):
-
     def __init__(self, start_position: np.ndarray, matchconfig: MatchConfig):
         super().__init__(start_position, matchconfig)
         self.goal = 0
@@ -77,7 +76,6 @@ class Ball(Entity):
 
 
 class Player(Entity):
-
     def __init__(self, start_position, matchconfig: MatchConfig, side, ID):
         super().__init__(start_position, matchconfig)
         self.ID = ID

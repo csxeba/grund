@@ -16,14 +16,26 @@ def handle_kick(p, b):
 
 
 def clarify_action(action, movement_vectors, action_type, learning_type, num_players):
-    if action_type == ActionSpaceType.CONTINUOUS and learning_type == LearningType.MULTI_AGENT:
+    if (
+        action_type == ActionSpaceType.CONTINUOUS
+        and learning_type == LearningType.MULTI_AGENT
+    ):
         all_action_vectors = action
-    elif action_type == ActionSpaceType.CONTINUOUS and learning_type == LearningType.SINGLE_AGENT:
+    elif (
+        action_type == ActionSpaceType.CONTINUOUS
+        and learning_type == LearningType.SINGLE_AGENT
+    ):
         all_action_vectors = np.zeros((num_players, 2))
         all_action_vectors[0] = movement_vectors
-    elif action_type == ActionSpaceType.DISCREETE and learning_type == LearningType.MULTI_AGENT:
+    elif (
+        action_type == ActionSpaceType.DISCREETE
+        and learning_type == LearningType.MULTI_AGENT
+    ):
         all_action_vectors = movement_vectors[action]
-    elif action_type == ActionSpaceType.DISCREETE and learning_type == LearningType.SINGLE_AGENT:
+    elif (
+        action_type == ActionSpaceType.DISCREETE
+        and learning_type == LearningType.SINGLE_AGENT
+    ):
         all_action_vectors = np.zeros((num_players, 2))
         all_action_vectors[0] = movement_vectors[action]
     else:

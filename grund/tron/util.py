@@ -2,7 +2,6 @@ from typing import Tuple
 
 from .types import Coordinate
 
-
 NEIGHBORHOOD = [
     Coordinate(0, 1),
     Coordinate(1, 0),
