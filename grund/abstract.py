@@ -1,11 +1,13 @@
+from typing import Any
+
+import gymnasium as gym
 import numpy as np
-import gym
 
 
 class GrundEnv(gym.Env):
-
     canvas_error = NotImplementedError(
-        "Please implement the .canvas property or set the _canvas attribute with an array!")
+        "Please implement the .canvas property or set the _canvas attribute with an array!"
+    )
 
     def __init__(self):
         self._canvas = None
@@ -24,7 +26,12 @@ class GrundEnv(gym.Env):
     def step(self, action):
         raise NotImplementedError
 
-    def reset(self):
+    def reset(
+        self,
+        *,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ):
         raise NotImplementedError
 
     def render(self, mode: str = "human"):

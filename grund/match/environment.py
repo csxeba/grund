@@ -1,15 +1,15 @@
 import numpy as np
 
 from grund import abstract
-from .config import MatchConfig, Side, ObservationType
+
+from ..util import movement, screen, spaces
+from .config import MatchConfig, ObservationType, Side
 from .entities import Ball, Player
-from .operation import handle_player_collision, handle_kick, clarify_action
 from .observation import MatchObservationMaker
-from ..util import spaces, screen, movement
+from .operation import clarify_action, handle_kick, handle_player_collision
 
 
 class Match(abstract.GrundEnv):
-
     def __init__(self, config: MatchConfig):
         super().__init__()
         self.cfg = config
@@ -35,16 +35,30 @@ class Match(abstract.GrundEnv):
         x_th = self.canvas_size[0] / (self.cfg.players_per_side + 1)
         y_th = self.canvas_size[1] / 4
         self.ball = Ball(start_position=self.canvas_size / 2, matchconfig=self.cfg)
-        self.players = [Player(start_position=np.array([x_th * i, y_th]),
-                               matchconfig=self.cfg,
-                               side=Side.FRIEND,
-                               ID=self._player_id) for i in range(1, self.cfg.players_per_side + 1)]
-        self.players += [Player(start_position=np.array([x_th * i, y_th * 3]),
-                                matchconfig=self.cfg,
-                                side=Side.ENEMY,
-                                ID=self._player_id) for i in range(1, self.cfg.players_per_side + 1)]
-        self.observation_space = spaces.ObservationSpace(self.observation_factory.observation_shape + (3,))
-        self.action_space = spaces.DiscreetActionSpace(actions=np.arange(len(self.movements)))
+        self.players = [
+            Player(
+                start_position=np.array([x_th * i, y_th]),
+                matchconfig=self.cfg,
+                side=Side.FRIEND,
+                ID=self._player_id,
+            )
+            for i in range(1, self.cfg.players_per_side + 1)
+        ]
+        self.players += [
+            Player(
+                start_position=np.array([x_th * i, y_th * 3]),
+                matchconfig=self.cfg,
+                side=Side.ENEMY,
+                ID=self._player_id,
+            )
+            for i in range(1, self.cfg.players_per_side + 1)
+        ]
+        self.observation_space = spaces.ObservationSpace(
+            self.observation_factory.observation_shape + (3,)
+        )
+        self.action_space = spaces.DiscreetActionSpace(
+            actions=np.arange(len(self.movements))
+        )
 
     def _get_random_coordinates(self):
         return np.random.uniform(0, self.canvas_size, size=2)
@@ -77,24 +91,33 @@ class Match(abstract.GrundEnv):
     def get_state(self):
         team1, team2 = self.teams
         if self.cfg.observation_type == ObservationType.VECTOR:
-            observation = self.observation_factory.get_numeric_observation(self.ball, team1, team2)
+            observation = self.observation_factory.get_numeric_observation(
+                self.ball, team1, team2
+            )
         else:
-            observation = self.observation_factory.get_pixel_observation(self.ball, team1, team2)
+            observation = self.observation_factory.get_pixel_observation(
+                self.ball, team1, team2
+            )
             if self.cfg.observation_type == ObservationType.PIXEL:
                 observation = observation[0]
         return observation
 
     def get_reward_ball_offset(self):
-        return ((self.canvas_size[0] - self.ball.position[0]) / self.canvas_size[0]) - 0.5
+        return (
+            (self.canvas_size[0] - self.ball.position[0]) / self.canvas_size[0]
+        ) - 0.5
 
     def get_reward_score(self):
         return self.ball.goal * 100
 
     def step(self, actions):
         for skip in range(self.cfg.frameskip):
-
             all_action_vectors = clarify_action(
-                actions, self.movements, self.cfg.action_space_type, self.cfg.learning_type, len(self.players)
+                actions,
+                self.movements,
+                self.cfg.action_space_type,
+                self.cfg.learning_type,
+                len(self.players),
             )
 
             b_movement = []

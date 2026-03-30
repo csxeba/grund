@@ -1,12 +1,11 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 class _EntityBase:
-
     def __init__(self, canvas_shape, color, size, coords=None):
         self.canvas_shape = np.array(canvas_shape[:2]).astype(float)
-        self._coords = np.array([-50., -50.])
+        self._coords = np.array([-50.0, -50.0])
         self.color = color
         self.size = size
         if coords is not None:
@@ -41,13 +40,14 @@ class _EntityBase:
 
     def teleport(self, destination=None):
         if destination is None:
-            destination = (np.random.uniform(0.05, 0.95, 2) * self.canvas_shape).astype(int)
+            destination = (np.random.uniform(0.05, 0.95, 2) * self.canvas_shape).astype(
+                int
+            )
         self._coords = destination
         self.adjust_coordinates()
 
 
 class EnemyBall(_EntityBase):
-
     def __init__(self, canvas_shape, color, size, speed):
         super().__init__(canvas_shape, color, size)
         self.speed = speed
@@ -57,7 +57,7 @@ class EnemyBall(_EntityBase):
         self.teleport()
 
     def _automove(self):
-        d = np.array([self.speed]*2)
+        d = np.array([self.speed] * 2)
         d[int(self.hori)] = 0
         if np.random.uniform() < 0.5:
             d *= -1
@@ -71,9 +71,8 @@ class EnemyBall(_EntityBase):
 
 
 class Square(_EntityBase):
-
     def __init__(self, canvas_shape, color, size):
-        super().__init__(canvas_shape, color, size*2)
+        super().__init__(canvas_shape, color, size * 2)
         self.teleport()
 
     def draw(self, screen):
@@ -84,11 +83,10 @@ class Square(_EntityBase):
 
 
 class PlayerBall(_EntityBase):
-
     def __init__(self, canvas_shape, color, size, speed):
         super().__init__(canvas_shape, color, size)
         self.speed = speed
         self.teleport()
 
     def move(self, dvec):
-        super().move(dvec=dvec*self.speed)
+        super().move(dvec=dvec * self.speed)
