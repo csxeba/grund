@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 from grund.abstract import GrundEnv
-from grund.util.spaces import ObservationSpace, ContinuousActionSpace
+from grund.util.spaces import ContinuousActionSpace, ObservationSpace
 
 
 def _as_opencv_coordinates(np_vector: np.ndarray) -> Tuple[int, int]:
@@ -61,12 +61,14 @@ class Dodge(GrundEnv):
     def __init__(self, config: DodgeConfig):
         super().__init__()
         self.cfg = config
-        self.num_balls = self.cfg.num_enemy_balls+1
+        self.num_balls = self.cfg.num_enemy_balls + 1
         self.observation_space = ObservationSpace((self.num_balls, 4))
-        self.action_space = ContinuousActionSpace(shape=(2,), minima=np.array([-2.]), maxima=np.array([2.]))
+        self.action_space = ContinuousActionSpace(
+            shape=(2,), minima=np.array([-2.0]), maxima=np.array([2.0])
+        )
         self.ball_positions = np.zeros([self.num_balls, 2], dtype=int)
         self.ball_velocities = np.zeros(self.num_balls + 1, dtype=float)
-        self.player_ball_idx = self.num_balls-1
+        self.player_ball_idx = self.num_balls - 1
 
     def reset(self):
         w = self.cfg.ball_radius
@@ -102,13 +104,15 @@ class Dodge(GrundEnv):
 
         self.ball_positions = ball_positions
         self.ball_velocities = ball_directions * self.cfg.ball_velocity
-        self.ball_velocities[-1, :] = 0.
+        self.ball_velocities[-1, :] = 0.0
 
     def step(self, action: np.ndarray) -> DodgeStepResult:
         # 1. Update Positions
         enemy_ball_velocities = self.ball_velocities[:-1] * self.cfg.dt
         player_ball_velocity = self.ball_velocities[-1:] + action[None, :]
-        new_ball_positions = self.ball_positions + np.concatenate([enemy_ball_velocities, player_ball_velocity])
+        new_ball_positions = self.ball_positions + np.concatenate(
+            [enemy_ball_velocities, player_ball_velocity]
+        )
 
         # 2. Handle Border Collisions
         x_max = self.cfg.simulation_width - self.cfg.ball_radius - 1
@@ -151,8 +155,14 @@ class Dodge(GrundEnv):
             if ball_1_idx == self.player_ball_idx or ball_2_idx == self.player_ball_idx:
                 done = True
                 break
-            pos_1, pos_2 = new_ball_positions[ball_1_idx], new_ball_positions[ball_2_idx]
-            vel_1, vel_2 = self.ball_velocities[ball_1_idx], self.ball_velocities[ball_2_idx]
+            pos_1, pos_2 = (
+                new_ball_positions[ball_1_idx],
+                new_ball_positions[ball_2_idx],
+            )
+            vel_1, vel_2 = (
+                self.ball_velocities[ball_1_idx],
+                self.ball_velocities[ball_2_idx],
+            )
 
             # Calculate the normal and tangential vectors of the collision
             collision_vector = pos_2 - pos_1
@@ -178,8 +188,15 @@ class Dodge(GrundEnv):
 
         self.ball_positions = new_ball_positions
         # assert np.isclose(np.linalg.norm(self.ball_velocities, axis=1).mean(), self.cfg.initial_ball_velocity)
-        print("Total system velocity:", np.linalg.norm(self.ball_velocities, axis=-1).mean())
-        return DodgeStepResult(observation=np.stack([self.ball_positions, self.ball_velocities], axis=1), reward=1., done=done)
+        print(
+            "Total system velocity:",
+            np.linalg.norm(self.ball_velocities, axis=-1).mean(),
+        )
+        return DodgeStepResult(
+            observation=np.stack([self.ball_positions, self.ball_velocities], axis=1),
+            reward=1.0,
+            done=done,
+        )
 
     def render(self, mode: str = "human"):
         canvas = np.zeros(
@@ -193,6 +210,10 @@ class Dodge(GrundEnv):
                 canvas, pos_image_space, self.cfg.ball_radius, WHITE, thickness=-1
             )
         canvas = cv2.circle(
-            canvas, _as_opencv_coordinates(self.ball_positions[-1]), self.cfg.ball_radius, RED, thickness=-1,
+            canvas,
+            _as_opencv_coordinates(self.ball_positions[-1]),
+            self.cfg.ball_radius,
+            RED,
+            thickness=-1,
         )
         return canvas

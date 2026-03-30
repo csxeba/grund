@@ -2,8 +2,12 @@ import unittest
 
 import numpy as np
 
-from grund.dodge.environment import (Dodge, DodgeConfig, _get_colliding_balls,
-                                     _get_colliding_pairs)
+from grund.dodge.environment import (
+    Dodge,
+    DodgeConfig,
+    _get_colliding_balls,
+    _get_colliding_pairs,
+)
 
 
 class TestDodgeInitialization(unittest.TestCase):

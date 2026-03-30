@@ -1,3 +1,5 @@
+from typing import Any
+
 import gymnasium as gym
 import numpy as np
 
@@ -24,7 +26,12 @@ class GrundEnv(gym.Env):
     def step(self, action):
         raise NotImplementedError
 
-    def reset(self):
+    def reset(
+        self,
+        *,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ):
         raise NotImplementedError
 
     def render(self, mode: str = "human"):

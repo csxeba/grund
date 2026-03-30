@@ -1,15 +1,23 @@
 import dataclasses
 import random
-from typing import NamedTuple, Set, Tuple
+from typing import Set, Tuple
 
 import numpy as np
 
 from grund import abstract
 from grund.util import spaces
 
-from . import util
-from .types import (COLORS, DIRECTIONS, SEMANTIC_CLASSES, Coordinate,
-                    StepResult, TRONAction, TRONObservation, TRONReward)
+from grund.tron import util
+from grund.tron.types import (
+    COLORS,
+    DIRECTIONS,
+    SEMANTIC_CLASSES,
+    Coordinate,
+    StepResult,
+    TRONAction,
+    TRONObservation,
+    TRONReward,
+)
 
 
 @dataclasses.dataclass
@@ -105,12 +113,12 @@ class TRONEnvironment(abstract.GrundEnv):
         return dead
 
     def _update_aspects(self):
-        self._render_aspect[
-            self.player_1.previous_position_xy.T
-        ] = self.cfg.player_1_blocked_color
-        self._render_aspect[
-            self.player_2.previous_position_xy.T
-        ] = self.cfg.player_2_blocked_color
+        self._render_aspect[self.player_1.previous_position_xy.T] = (
+            self.cfg.player_1_blocked_color
+        )
+        self._render_aspect[self.player_2.previous_position_xy.T] = (
+            self.cfg.player_2_blocked_color
+        )
         self._render_aspect[self.player_1.position_xy.T] = self.cfg.player_1_color
         self._render_aspect[self.player_2.position_xy.T] = self.cfg.player_2_color
         self.player_1.update_aspect(enemy=self.player_2)

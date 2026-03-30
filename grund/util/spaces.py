@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -28,7 +28,12 @@ class DiscreetActionSpace:
 
 
 class ContinuousActionSpace:
-    def __init__(self, shape: Tuple[int, ...], minima: np.ndarray, maxima: np.ndarray,):
+    def __init__(
+        self,
+        shape: Tuple[int, ...],
+        minima: np.ndarray,
+        maxima: np.ndarray,
+    ):
         self.shape = shape
         self.minima = minima
         self.maxima = maxima
@@ -37,4 +42,6 @@ class ContinuousActionSpace:
         if n is None:
             return np.random.uniform(low=self.minima, high=self.maxima, size=self.shape)
         else:
-            return np.random.uniform(low=self.minima, high=self.maxima, size=(n,) + self.shape)
+            return np.random.uniform(
+                low=self.minima, high=self.maxima, size=(n,) + self.shape
+            )

@@ -94,5 +94,4 @@ class TonksEnvironment(GrundEnv):
         # else:
         #     self.tonks_static_info[:, :2] = new_box_x0y0
 
-    def render(self, mode: str = "human"):
-        ...
+    def render(self, mode: str = "human"): ...
