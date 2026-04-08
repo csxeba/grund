@@ -16,6 +16,7 @@ def handle_kick(p, b):
 
 
 def clarify_action(action, movement_vectors, action_type, learning_type, num_players):
+    return np.zeros((num_players, 2))
     if (
         action_type == ActionSpaceType.CONTINUOUS
         and learning_type == LearningType.MULTI_AGENT

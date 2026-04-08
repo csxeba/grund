@@ -3,6 +3,8 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 
+from grund.util.screen import CV2Screen
+
 
 class GrundEnv(gym.Env):
     canvas_error = NotImplementedError(
@@ -11,7 +13,7 @@ class GrundEnv(gym.Env):
 
     def __init__(self):
         self._canvas = None
-        self.renderer = None
+        self.renderer = CV2Screen()
 
     @property
     def canvas(self) -> np.ndarray:
@@ -35,4 +37,5 @@ class GrundEnv(gym.Env):
         raise NotImplementedError
 
     def render(self, mode: str = "human"):
-        return self.canvas
+        if mode == "human":
+            self.renderer.blit(self.canvas)

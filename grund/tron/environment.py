@@ -18,6 +18,7 @@ from grund.tron.types import (
     TRONObservation,
     TRONReward,
 )
+from grund.util.screen import CV2Screen
 
 
 @dataclasses.dataclass
@@ -103,7 +104,8 @@ class TRONEnvironment(abstract.GrundEnv):
         )
         self.observation_space = spaces.ObservationSpace(shape=config.shape_xy)
         self.num_semantic_classes = SEMANTIC_CLASSES.NO_SEMANTIC_CLASSES
-        self.done = None
+        self._done = None
+        self.renderer = CV2Screen(fps=30, scale=6)
 
     def _is_player_dead(self, player: TRONPlayer, enemy: TRONPlayer) -> bool:
         coords_np = player.position_xy.numpy()
@@ -135,7 +137,7 @@ class TRONEnvironment(abstract.GrundEnv):
         self.player_1.reset(position=c1, direction=d1)
         self.player_2.reset(position=c2, direction=d2)
         self._reset_render_aspect()
-        self.done = False
+        self._done = False
         return TRONObservation(
             self.player_1.observation_aspect,
             self.player_2.observation_aspect,
@@ -148,7 +150,8 @@ class TRONEnvironment(abstract.GrundEnv):
                 f"Step function must receive an instance of Action. Got: {type(action)}"
             )
 
-        if self.done is not False:
+        print(self._done)
+        if self._done:
             raise RuntimeError("Environment must be reset")
 
         self.player_1.step(action.player_1)
@@ -182,11 +185,15 @@ class TRONEnvironment(abstract.GrundEnv):
             self._render_aspect,
         )
         reward = TRONReward(self.player_1.reward_aspect, self.player_2.reward_aspect)
-        self.done = any(dead_players)
+        self._done = any(dead_players)
         info = {}
 
-        return StepResult(observation, reward, self.done, info)
+        return StepResult(observation, reward, self._done, info)
 
     @property
     def canvas(self) -> np.ndarray:
         return self._render_aspect
+
+    def render(self, mode="human"):
+        if mode == "human":
+            self.renderer.blit(self.canvas)

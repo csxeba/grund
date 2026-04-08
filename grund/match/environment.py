@@ -2,11 +2,11 @@ import numpy as np
 
 from grund import abstract
 
-from ..util import movement, screen, spaces
-from .config import MatchConfig, ObservationType, Side
-from .entities import Ball, Player
-from .observation import MatchObservationMaker
-from .operation import clarify_action, handle_kick, handle_player_collision
+from grund.util import movement, screen, spaces
+from grund.match.config import MatchConfig, ObservationType, Side
+from grund.match.entities import Ball, Player
+from grund.match.observation import MatchObservationMaker
+from grund.match.operation import clarify_action, handle_kick, handle_player_collision
 
 
 class Match(abstract.GrundEnv):
@@ -21,7 +21,7 @@ class Match(abstract.GrundEnv):
         self.players = None
         self.observation_space = None
         self.action_space = None
-        self.screen = screen.CV2Screen()
+        self.screen = screen.CV2Screen(scale=3)
         self.movements = movement.get_movement_vectors(5)
         self._next_player_id = -1
         self._create_all_entities()
@@ -102,7 +102,7 @@ class Match(abstract.GrundEnv):
                 observation = observation[0]
         return observation
 
-    def get_reward_ball_offset(self):
+    def get_reward_ball_teoffset(self):
         return (
             (self.canvas_size[0] - self.ball.position[0]) / self.canvas_size[0]
         ) - 0.5
