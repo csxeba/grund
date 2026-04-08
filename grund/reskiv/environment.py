@@ -8,7 +8,7 @@ import numpy as np
 from grund.abstract import GrundEnv
 from grund.util import movement
 from grund.reskiv.entities import EnemyBall, PlayerBall, Square
-
+from grund.util.screen import CV2Screen
 
 _types = [PlayerBall, Square, EnemyBall]
 
@@ -28,10 +28,11 @@ class ReskivConfig:
     player_speed: int = 7
     observation_type: Literal["rgb", "coords"] = "rgb"
     time_limit: int = -1
+    step_penalty: float = -0.1
 
 
 class Reskiv(GrundEnv):
-    def __init__(self, config: ReskivConfig = ReskivConfig()):
+    def __init__(self, config: ReskivConfig = ReskivConfig(), render_mode: str = None):
         super().__init__()
         self.cfg = config
         self._step_counter = -1
@@ -60,6 +61,7 @@ class Reskiv(GrundEnv):
             self.observation_space = gym.spaces.Box(low=0, high=3, shape=[3, 3])
         self.movement_vectors = movement.get_movement_vectors(num_directions=5)
 
+        self.render_mode = render_mode
         self.renderer = None
 
     def spawn_enemy(self):
@@ -111,7 +113,7 @@ class Reskiv(GrundEnv):
         term = False
         trunc = False
         info = {"num_enemies": len(self.enemies)}
-        reward = -0.1
+        reward = self.cfg.step_penalty
         self._step_counter += 1
         movement_vector = self.movement_vectors[action]
         self.player.move(movement_vector)
@@ -125,7 +127,7 @@ class Reskiv(GrundEnv):
             e.move()
             if self.player.touches(e):
                 term = True
-                reward = -1.0
+                reward = -10.0
                 break
 
         if (self.cfg.time_limit > -1) and (self._step_counter >= self.cfg.time_limit):
@@ -140,8 +142,11 @@ class Reskiv(GrundEnv):
 
     def render(self, mode: str = "human"):
         if mode == "human":
-            cv2.imshow("REskiv", self._canvas)
-            cv2.waitKey(1000 // self.cfg.frames_per_second)
+            if self.renderer is None:
+                self.renderer = CV2Screen(scale=3, fps=10)
+            self.make_obs_rgb()
+            self.renderer.blit(self._canvas)
+            print("\r", self._step_counter, end="")
         elif mode == "rgb_array":
             return self._canvas
         else:

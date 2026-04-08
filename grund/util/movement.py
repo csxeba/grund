@@ -19,17 +19,35 @@ def get_movement_vectors(num_directions: int):
 
 
 class MovementTranslator:
-    @staticmethod
-    def translate(opencv_keypress):
-        return {
-            -1: NOOP,
-            83: E,
-            81: W,
-            82: N,
-            84: S,
-            27: None,
-            119: N,
-            115: S,
-            97: W,
-            100: E,
-        }[opencv_keypress]
+
+    def __init__(self, continuous: bool):
+        if continuous:
+            self.mapping = {
+                -1: NOOP,
+                83: E,
+                81: W,
+                82: N,
+                84: S,
+                27: None,
+                119: N,
+                115: S,
+                97: W,
+                100: E,
+            }
+        else:
+            self.mapping = {
+                -1: 4,
+                83: 2,
+                81: 0,
+                82: 1,
+                84: 3,
+                27: None,
+                119: 1,
+                115: 3,
+                97: 0,
+                100: 2,
+            }
+
+
+    def translate(self, opencv_keypress):
+        return self.mapping[opencv_keypress]

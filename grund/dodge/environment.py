@@ -4,13 +4,16 @@ and bounce off of each other in an elastic manner.
 """
 
 import dataclasses
-from typing import Tuple
+import random
+from typing import Tuple, NamedTuple
 
 import cv2
+import gymnasium as gym
 import numpy as np
 
 from grund.abstract import GrundEnv
-from grund.util.spaces import ContinuousActionSpace, ObservationSpace
+from grund.util import movement
+from grund.util.screen import CV2Screen
 
 
 def _as_opencv_coordinates(np_vector: np.ndarray) -> Tuple[int, int]:
@@ -25,16 +28,23 @@ class DodgeConfig:
     num_enemy_balls: int
     ball_radius: int
     ball_velocity: int
+    step_reward: float
+    midpoint_distance_reward_coef: float
+    time_limit: int
 
 
-@dataclasses.dataclass
-class DodgeStepResult:
+class DodgeStepResult(NamedTuple):
     observation: np.ndarray
     reward: float
-    done: bool
+    termination: bool
+    truncation: bool
+    info: dict
 
 
-def _get_colliding_balls(ball_positions: np.ndarray, ball_radius: int) -> np.ndarray:
+def _get_colliding_balls(
+    ball_positions: np.ndarray,
+    ball_radius: int,
+) -> np.ndarray:
     deltas = ball_positions[:, None, :] - ball_positions[None, :, :]
     distances = np.sqrt(np.sum(deltas**2, axis=-1))
     np.fill_diagonal(distances, np.inf)
@@ -61,16 +71,36 @@ class Dodge(GrundEnv):
     def __init__(self, config: DodgeConfig):
         super().__init__()
         self.cfg = config
-        self.num_balls = self.cfg.num_enemy_balls + 1
-        self.observation_space = ObservationSpace((self.num_balls, 4))
-        self.action_space = ContinuousActionSpace(
-            shape=(2,), minima=np.array([-2.0]), maxima=np.array([2.0])
-        )
+        self.num_enemies = self.cfg.num_enemy_balls
+        self.num_balls = self.num_enemies + 1
         self.ball_positions = np.zeros([self.num_balls, 2], dtype=int)
-        self.ball_velocities = np.zeros(self.num_balls + 1, dtype=float)
-        self.player_ball_idx = self.num_balls - 1
+        self.ball_velocities = np.zeros(self.num_balls, dtype=float)
 
-    def reset(self):
+        self.observation_space = gym.spaces.Box(
+            low=np.array(self.num_balls*2*[[0.0, 0.0]], dtype=np.float32),
+            high=np.array(self.num_balls*2*[[1.0, 1.0]], dtype=np.float32),
+            shape=[self.num_balls*2, 2],
+        )
+
+        self.movement_vectors = movement.get_movement_vectors(num_directions=5)
+        self.action_space = gym.spaces.Discrete(5)
+        self._step_counter = 0
+        self.renderer = CV2Screen(fps=15, scale=3)
+
+    def _make_observation(self):
+        return np.concatenate([
+            self.ball_positions / [self.cfg.simulation_height, self.cfg.simulation_width],
+            self.ball_velocities / [self.cfg.simulation_height, self.cfg.simulation_width],
+        ])
+
+    def reset(
+        self,
+        *,
+        seed: int | None = None,
+        options: dict | None = None,
+    ):
+        self.num_enemies = self.cfg.num_enemy_balls
+        self.num_balls = self.num_enemies + 1
         w = self.cfg.ball_radius
         max_x, max_y = self.cfg.simulation_width - w, self.cfg.simulation_height - w
         ball_positions = np.random.randint(
@@ -85,7 +115,7 @@ class Dodge(GrundEnv):
         )
         ball_directions = np.stack([np.cos(ball_angles), np.sin(ball_angles)], axis=1)
 
-        for iteration in range(1, 6):
+        for iteration in range(1, 21):
             colliding_balls = _get_colliding_balls(
                 ball_positions=ball_positions,
                 ball_radius=self.cfg.ball_radius,
@@ -104,14 +134,16 @@ class Dodge(GrundEnv):
 
         self.ball_positions = ball_positions
         self.ball_velocities = ball_directions * self.cfg.ball_velocity
-        self.ball_velocities[-1, :] = 0.0
+        self.ball_velocities[0, :] = 0.0
+        self._step_counter = 1
+        return self._make_observation(), {}
 
-    def step(self, action: np.ndarray) -> DodgeStepResult:
+    def step(self, action: int) -> DodgeStepResult:
         # 1. Update Positions
-        enemy_ball_velocities = self.ball_velocities[:-1] * self.cfg.dt
-        player_ball_velocity = self.ball_velocities[-1:] + action[None, :]
+        movement_vector = self.movement_vectors[action] * self.cfg.ball_velocity / 2
+        enemy_ball_velocities = self.ball_velocities[1:] * self.cfg.dt
         new_ball_positions = self.ball_positions + np.concatenate(
-            [enemy_ball_velocities, player_ball_velocity]
+            [movement_vector[None, :], enemy_ball_velocities]
         )
 
         # 2. Handle Border Collisions
@@ -152,7 +184,7 @@ class Dodge(GrundEnv):
         )
         done = False
         for ball_1_idx, ball_2_idx in colliding_pairs:
-            if ball_1_idx == self.player_ball_idx or ball_2_idx == self.player_ball_idx:
+            if ball_1_idx == 0 or ball_2_idx == 0:
                 done = True
                 break
             pos_1, pos_2 = (
@@ -187,15 +219,17 @@ class Dodge(GrundEnv):
             self.ball_velocities[ball_2_idx] = vel_2_new
 
         self.ball_positions = new_ball_positions
-        # assert np.isclose(np.linalg.norm(self.ball_velocities, axis=1).mean(), self.cfg.initial_ball_velocity)
-        print(
-            "Total system velocity:",
-            np.linalg.norm(self.ball_velocities, axis=-1).mean(),
-        )
+
+        observation = self._make_observation()
+        midpoint_distance = np.linalg.norm(observation[0] - 0.5).item()
+        rwd = self.cfg.step_reward + self.cfg.midpoint_distance_reward_coef * midpoint_distance
+        self._step_counter += 1
         return DodgeStepResult(
-            observation=np.stack([self.ball_positions, self.ball_velocities], axis=1),
-            reward=1.0,
-            done=done,
+            observation=observation,
+            reward=rwd,
+            termination=done,
+            truncation=self._step_counter >= self.cfg.time_limit,
+            info={},
         )
 
     def render(self, mode: str = "human"):
@@ -204,16 +238,16 @@ class Dodge(GrundEnv):
         )
         WHITE = (255, 255, 255)
         RED = (0, 0, 255)
-        for pos in self.ball_positions[:-1]:
+        for pos in self.ball_positions[1:]:
             pos_image_space = _as_opencv_coordinates(pos)
             canvas = cv2.circle(
                 canvas, pos_image_space, self.cfg.ball_radius, WHITE, thickness=-1
             )
         canvas = cv2.circle(
             canvas,
-            _as_opencv_coordinates(self.ball_positions[-1]),
+            _as_opencv_coordinates(self.ball_positions[0]),
             self.cfg.ball_radius,
             RED,
             thickness=-1,
         )
-        return canvas
+        return self.renderer.blit(canvas)
